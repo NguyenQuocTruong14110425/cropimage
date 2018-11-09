@@ -165,10 +165,10 @@
                                 {{--<canvas id="myCanvas" width="500" height="300"></canvas>--}}
                             {{--</div>--}}
                             <input type="file" class="form-control input_upload" id="file" name="file">
-                            <input type="hidden" class="form-control input_upload" id="x1" name="x1" value="">
-                            <input type="hidden" class="form-control input_upload" id="y1" name="y1" value="">
-                            <input type="hidden" class="form-control input_upload" id="w" name="w" value="">
-                            <input type="hidden" class="form-control input_upload" id="h" name="h" value="">
+                            <input type="hidden" class="form-control input_upload" id="x1" name="x1" value="50">
+                            <input type="hidden" class="form-control input_upload" id="y1" name="y1" value="50">
+                            <input type="hidden" class="form-control input_upload" id="w" name="w" value="450">
+                            <input type="hidden" class="form-control input_upload" id="h" name="h" value="450">
                         </div>
                     </div>
                     <div class="form-group row">
@@ -188,14 +188,14 @@
         </div>
         <div class="container">
             <h1>Customize preview for Cropper</h1>
-            <button type="button" onclick="showCrop()" class="btn btn-success">Crop</button>
+            {{--<button type="button" onclick="showCrop()" class="btn btn-success">Crop</button>--}}
             {{--<label>X <input type="text" size="4" id="x1" name="x1" /></label>--}}
             {{--<label>Y <input type="text" size="4" id="y1" name="y1" /></label>--}}
             {{--<label>W <input type="text" size="4" id="w" name="w" /></label>--}}
             {{--<label>H <input type="text" size="4" id="h" name="h" /></label>--}}
             <input type="range" name="zoom" id="zoom" value="100" min="10" max="100">
             <div class="image-crop" id="image-crop">
-                <img src="{{URL::to('logo.png')}}"  id="target" />
+                <img  id="target" />
             </div>
             <div class="span3" id="interface">
             </div>
@@ -204,32 +204,53 @@
 
         </div>
         <script>
+            $('#file').change(function () {
+                if ($('#target').data('Jcrop')) {
+                    $("#target").removeAttr('style');
+                    $('#zoom').val(100);
+                    $('#target').data('Jcrop').destroy();
+                }
+                var filesToUpload = document.getElementById('file').files;
+                var file = filesToUpload[0];
+                var img = document.getElementById("target");
+                var reader = new FileReader();
+                // Set the image once loaded into file reader
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+
+                    var canvas = document.createElement("canvas");
+                    //var canvas = $("<canvas>", {"id":"testing"})[0];
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+
+                    var MAX_WIDTH = 500;
+                    var MAX_HEIGHT = 500;
+                    var width = img.width;
+                    var height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, width, height);
+                }
+                // Load files into file reader
+                reader.readAsDataURL(file);
+            })
 
             $(document).ready(
                 function(){
-
-                    var width = $('#target').width();
-                    var height = $('#target').height();
-                    var widthScrop =  $('#image-crop').width();
-                    var heightScrop =  $('#image-crop').height();
                     $('#zoom').change(function () {
-                        var scale = $(this).val();
-                        var widthScale = width*(scale/100);
-                        var heightScale = height*(scale/100);
-                        if( widthScale > widthScrop && heightScale > heightScrop)
-                        {
-                            widthScale = width*(scale/100);
-                            heightScale = height*(scale/100);
-                        }
-                        else
-                        {
-                            heightScale = heightScrop;
-                            widthScale = $('#target').width();
-                        }
-                        // $('#target').css({
-                        //     width: widthScale,
-                        //     height: heightScale
-                        // });
                         showCrop();
                     })
                 }
@@ -275,12 +296,13 @@
                               // document.getElementById('image-crop').onmousemove=moveDiv;
                           }
                         if ($('#target').data('Jcrop') == undefined) {
+                            var tag = 1/(scale/100);
                             $('#target').Jcrop({
                                 aspectRatio: 1,
                                 onChange: showCoords,
                                 onSelect: showCoords,
                                 onRelease: clearCoords,
-                                setSelect: [50, 50, 450, 450],
+                                setSelect: [ 50 * tag, 50 * tag, parseInt(50 * tag) + 400 * tag, parseInt(50 * tag) + 400 * tag],
                                 bgOpacity: 0.4,
                                 boxWidth: boxWidth,
                                 boxHeight: boxHeight,
@@ -296,86 +318,6 @@
                         jcrop_api.setSelect([x1,y1,x2,y2]);
                     });
 
-                    // Define page sections
-                    var sections = {
-                        anim_buttons: 'Animate Selection'
-                    };
-                    // Define animation buttons
-                    var ac = {
-                        anim1: [217,122,382,284],
-                        anim2: [20,20,580,380],
-                        anim3: [24,24,176,376],
-                        anim4: [347,165,550,355],
-                        anim5: [136,55,472,183]
-                    };
-                    // Create fieldset targets for buttons
-                    for(i in sections)
-                        insertSection(i,sections[i]);
-
-                    function create_btn(c) {
-                        var $o = $('<button />').addClass('btn btn-small');
-                        if (c) $o.append(c);
-                        return $o;
-                    }
-
-                    var a_count = 1;
-                    // Create animation buttons
-                    for(i in ac) {
-                        $('#anim_buttons .btn-group')
-                            .append(
-                                create_btn(a_count++).click(animHandler(ac[i])),
-                                ' '
-                            );
-                    }
-
-                    $('#anim_buttons .btn-group').append(
-                        create_btn('Bye!').click(function(e){
-                            $(e.target).addClass('active');
-                            jcrop_api.animateTo(
-                                [300,200,300,200],
-                                function(){
-                                    this.release();
-                                    $(e.target).closest('.btn-group').find('.active').removeClass('active');
-                                }
-                            );
-                            return false;
-                        })
-                    );
-
-
-                    // Function to insert named sections into interface
-                    function insertSection(k,v) {
-                        $('#interface').prepend(
-                            $('<fieldset></fieldset>').attr('id',k).append(
-                                $('<legend></legend>').append(v),
-                                '<div class="btn-toolbar"><div class="btn-group"></div></div>'
-                            )
-                        );
-                    };
-                    // Handler for option-setting buttons
-                    function setoptHandler(k,v) {
-                        return function(e) {
-                            $(e.target).closest('.btn-group').find('.active').removeClass('active');
-                            $(e.target).addClass('active');
-                            var opt = { };
-                            opt[k] = v;
-                            jcrop_api.setOptions(opt);
-                            return false;
-                        };
-                    };
-                    // Handler for animation buttons
-                    function animHandler(v) {
-                        return function(e) {
-                            $(e.target).addClass('active');
-                            jcrop_api.animateTo(v,function(){
-                                $(e.target).closest('.btn-group').find('.active').removeClass('active');
-                            });
-                            return false;
-                        };
-                    };
-
-                    $('#bgo_buttons .btn:first,#bgc_buttons .btn:last').addClass('active');
-                    $('#interface').show();
 
             }
 
